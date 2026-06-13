@@ -93,6 +93,8 @@ const fallbackProjects = [
   }
 ];
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 function App() {
   const [projects, setProjects] = useState(fallbackProjects);
   const [activeSlide, setActiveSlide] = useState(0); // Start at Slide 1 (normal index 0)
@@ -117,7 +119,7 @@ function App() {
 
   // Fetch projects from backend
   useEffect(() => {
-    fetch('http://localhost:5000/api/projects')
+    fetch(`${API_BASE_URL}/api/projects`)
       .then(res => {
         if (!res.ok) throw new Error("Backend offline");
         return res.json();
@@ -302,7 +304,7 @@ function App() {
   const submitRating = (rating) => {
     if (!ratingProject) return;
 
-    fetch(`http://localhost:5000/api/projects/${ratingProject.id}/rate`, {
+    fetch(`${API_BASE_URL}/api/projects/${ratingProject.id}/rate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rating })
