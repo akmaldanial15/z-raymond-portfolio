@@ -167,20 +167,21 @@ function App() {
   useEffect(() => {
     const handleResize = () => {
       setWindowHeight(window.innerHeight);
-      if (containerRef.current) {
-        const targetScroll = activeSlideRef.current * window.innerHeight;
+      if (containerRef.current && projects.length > 0) {
+        const targetScroll = (projects.length + activeSlideRef.current) * window.innerHeight;
         containerRef.current.scrollTop = targetScroll;
         setScrollTop(targetScroll);
       }
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [projects.length]);
 
   // Sync scroll height when projects load or screen dimensions update
   useEffect(() => {
     if (containerRef.current && projects.length > 0) {
-      const targetScroll = activeSlide * windowHeight;
+      // Position the scroll container in the middle loop (Loop 2) at the active index
+      const targetScroll = (projects.length + activeSlide) * windowHeight;
       containerRef.current.scrollTop = targetScroll;
       setScrollTop(targetScroll);
     }
@@ -191,17 +192,17 @@ function App() {
     activeSlideRef.current = activeSlide;
   }, [activeSlide]);
 
-  // Bind keydown events for keyboard navigation
+  // Bind keydown events for infinite wrapping keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
       let nextIndex = activeSlideRef.current;
 
       if (e.key === 'ArrowDown' || e.key === 'PageDown') {
         e.preventDefault();
-        nextIndex++;
+        nextIndex = (nextIndex + 1) % projects.length;
       } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
         e.preventDefault();
-        nextIndex--;
+        nextIndex = (nextIndex - 1 + projects.length) % projects.length;
       } else if (e.key === 'Home') {
         e.preventDefault();
         nextIndex = 0;
@@ -228,14 +229,27 @@ function App() {
     };
   }, []);
 
-  // Scroll event handler for syncing active slide index natively
+  // Scroll event handler for syncing active slide index natively & wrapping scroll limits
   const handleScroll = () => {
-    if (containerRef.current) {
-      const scrollY = containerRef.current.scrollTop;
+    if (containerRef.current && projects.length > 0) {
+      let scrollY = containerRef.current.scrollTop;
+      const totalLoopHeight = projects.length * windowHeight;
+
+      // Seamlessly wrap the scroll position when crossing boundaries
+      if (scrollY >= totalLoopHeight * 2) {
+        scrollY = scrollY - totalLoopHeight;
+        containerRef.current.scrollTop = scrollY;
+      } else if (scrollY < totalLoopHeight) {
+        scrollY = scrollY + totalLoopHeight;
+        containerRef.current.scrollTop = scrollY;
+      }
+
       setScrollTop(scrollY);
       
       if (isProgrammaticScroll.current) return;
-      const index = Math.round(scrollY / windowHeight);
+      
+      // Calculate active index relative to one loop size
+      const index = Math.round(scrollY / windowHeight) % projects.length;
       if (index >= 0 && index < projects.length && index !== activeSlideRef.current) {
         setActiveSlide(index);
       }
@@ -247,11 +261,14 @@ function App() {
     
     isProgrammaticScroll.current = true;
     setActiveSlide(index);
-    setScrollTop(index * windowHeight);
+    
+    // Position target slide relative to the middle loop
+    const targetY = (projects.length + index) * windowHeight;
+    setScrollTop(targetY);
     
     if (containerRef.current) {
       containerRef.current.scrollTo({
-        top: index * windowHeight,
+        top: targetY,
         behavior: 'smooth'
       });
     }
@@ -369,16 +386,16 @@ function App() {
         ref={containerRef}
         onScroll={handleScroll}
       >
-        {projects.map((project, index) => {
-          const isActive = index === activeSlide;
+        {[...projects, ...projects, ...projects].map((project, index) => {
+          const isActive = index === Math.round(scrollTop / windowHeight);
           // Calculate dynamic vertical parallax offset relative to scroll position
           const offset = scrollTop - index * windowHeight;
           const yParallax = offset * -0.15; // Move opposite to scroll for 3D depth
 
           return (
             <section 
-              key={project.id} 
-              id={`slide-${project.id}`} 
+              key={`${project.id}-${index}`} 
+              id={`slide-${project.id}-${index}`} 
               className="slide"
             >
               {/* Background Parallax Layer */}
