@@ -143,6 +143,10 @@ header {
   background-repeat: no-repeat;
   transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
   will-change: transform;
+  transform: translate(
+    calc(var(--is-active, 0) * var(--mouse-x, 0px)),
+    calc((var(--is-active, 0) * var(--mouse-y, 0px)) + (var(--scroll-top, 0px) - var(--slide-index) * 100vh) * 0.85)
+  ) scale(1.25);
 }
 
 /* Vignette overlay matched to 88% frame */
@@ -668,41 +672,40 @@ header {
   }
   
   .slide-bg-container {
-    top: 4vh;
-    left: 5vw;
-    width: 90vw;
-    height: 80vh;
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
-    clip-path: inset(0 round 20px);
-    border-radius: 20px;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    border: none;
+    box-shadow: none;
+    clip-path: inset(0);
+    border-radius: 0;
   }
   
   .slide-bg {
-    top: 4vh;
-    left: 5vw;
-    width: 90vw;
-    height: 80vh;
-    clip-path: inset(0 round 20px);
-    border-radius: 20px;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
   }
 
   .slide-overlay {
-    top: 4vh;
-    left: 5vw;
-    width: 90vw;
-    height: 80vh;
-    background: radial-gradient(circle at center, rgba(6, 6, 7, 0) 0%, rgba(6, 6, 7, 0.7) 90%, rgba(6, 6, 7, 0.85) 100%),
-                linear-gradient(to top, rgba(6, 6, 7, 0.9) 0%, rgba(6, 6, 7, 0.15) 35%, transparent 100%);
-    clip-path: inset(0 round 20px);
-    border-radius: 20px;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, rgba(6, 6, 7, 0) 0%, rgba(6, 6, 7, 0.6) 80%, rgba(6, 6, 7, 0.85) 100%),
+                linear-gradient(to top, rgba(6, 6, 7, 0.95) 0%, rgba(6, 6, 7, 0.3) 40%, transparent 100%);
+    clip-path: inset(0);
+    border-radius: 0;
   }
   
   .slide-content {
-    width: 90vw;
-    height: 80vh;
-    margin-top: 4vh;
-    padding: 2.5rem 1.2rem 2rem;
+    width: 100vw;
+    height: 100vh;
+    margin-top: 0;
+    padding: 5.5rem 1.5rem 4rem;
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto 1fr;

@@ -170,6 +170,7 @@ function App() {
       if (containerRef.current && projects.length > 0) {
         const targetScroll = (activeSlideRef.current + projects.length) * window.innerHeight;
         containerRef.current.scrollTop = targetScroll;
+        containerRef.current.style.setProperty('--scroll-top', `${targetScroll}px`);
         setScrollTop(targetScroll);
       }
     };
@@ -182,6 +183,7 @@ function App() {
     if (containerRef.current && projects.length > 0) {
       const targetScroll = (activeSlide + projects.length) * windowHeight;
       containerRef.current.scrollTop = targetScroll;
+      containerRef.current.style.setProperty('--scroll-top', `${targetScroll}px`);
       setScrollTop(targetScroll);
     }
   }, [projects, windowHeight]);
@@ -242,6 +244,7 @@ function App() {
       const newScrollY = scrollY + setHeight;
       isProgrammaticScroll.current = true;
       containerRef.current.scrollTop = newScrollY;
+      containerRef.current.style.setProperty('--scroll-top', `${newScrollY}px`);
       setScrollTop(newScrollY);
       
       const index = Math.round(newScrollY / windowHeight) % projects.length;
@@ -257,6 +260,7 @@ function App() {
       const newScrollY = scrollY - setHeight;
       isProgrammaticScroll.current = true;
       containerRef.current.scrollTop = newScrollY;
+      containerRef.current.style.setProperty('--scroll-top', `${newScrollY}px`);
       setScrollTop(newScrollY);
       
       const index = Math.round(newScrollY / windowHeight) % projects.length;
@@ -269,6 +273,7 @@ function App() {
       }, 50);
     } else {
       // Normal scroll within middle area
+      containerRef.current.style.setProperty('--scroll-top', `${scrollY}px`);
       setScrollTop(scrollY);
       
       if (isProgrammaticScroll.current) return;
@@ -289,6 +294,7 @@ function App() {
     setScrollTop(targetScroll);
     
     if (containerRef.current) {
+      containerRef.current.style.setProperty('--scroll-top', `${targetScroll}px`);
       containerRef.current.scrollTo({
         top: targetScroll,
         behavior: 'smooth'
@@ -407,15 +413,14 @@ function App() {
         className="scroll-container" 
         ref={containerRef}
         onScroll={handleScroll}
+        style={{
+          '--mouse-x': `${mouseParallax.x * -15}px`,
+          '--mouse-y': `${mouseParallax.y * -15}px`
+        }}
       >
         {[...projects, ...projects, ...projects].map((project, index) => {
           const originalIndex = index % projects.length;
           const isActive = originalIndex === activeSlide;
-          // Calculate dynamic vertical parallax offset relative to scroll position
-          const offset = scrollTop - index * windowHeight;
-          // Since .slide-bg is now position: absolute, translating it by 'offset' keeps it static relative to the viewport.
-          // By translating by 'offset * 0.85', we keep it mostly static but allow a subtle 15% parallax shift!
-          const yTranslation = offset * 0.85;
 
           return (
             <section 
@@ -429,7 +434,8 @@ function App() {
                   className="slide-bg"
                   style={{
                     backgroundImage: `url(${imageMap[project.imageKey]})`,
-                    transform: `translate(${isActive ? mouseParallax.x * -15 : 0}px, ${(isActive ? mouseParallax.y * -15 : 0) + yTranslation}px) scale(1.25)`
+                    '--slide-index': index,
+                    '--is-active': isActive ? 1 : 0
                   }}
                 />
               </div>
