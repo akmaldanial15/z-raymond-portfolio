@@ -114,8 +114,9 @@ function App() {
   const [mouseParallax, setMouseParallax] = useState({ x: 0, y: 0 });
 
   const containerRef = useRef(null);
-  const isAnimating = useRef(false);
   const activeSlideRef = useRef(0);
+  const isProgrammaticScroll = useRef(false);
+  const programmaticTimeoutRef = useRef(null);
 
   // Fetch projects from backend
   useEffect(() => {
@@ -167,8 +168,9 @@ function App() {
     const handleResize = () => {
       setWindowHeight(window.innerHeight);
       if (containerRef.current) {
-        containerRef.current.scrollTop = activeSlideRef.current * window.innerHeight;
-        setScrollTop(activeSlideRef.current * window.innerHeight);
+        const targetScroll = activeSlideRef.current * window.innerHeight;
+        containerRef.current.scrollTop = targetScroll;
+        setScrollTop(targetScroll);
       }
     };
     window.addEventListener('resize', handleResize);
@@ -178,8 +180,9 @@ function App() {
   // Sync scroll height when projects load or screen dimensions update
   useEffect(() => {
     if (containerRef.current && projects.length > 0) {
-      containerRef.current.scrollTop = activeSlide * windowHeight;
-      setScrollTop(activeSlide * windowHeight);
+      const targetScroll = activeSlide * windowHeight;
+      containerRef.current.scrollTop = targetScroll;
+      setScrollTop(targetScroll);
     }
   }, [projects, windowHeight]);
 
@@ -188,22 +191,9 @@ function App() {
     activeSlideRef.current = activeSlide;
   }, [activeSlide]);
 
-  // Bind custom wheel and touch gesture controllers for dynamic, cinematic smooth scroll
+  // Bind keydown events for keyboard navigation
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleWheel = (e) => {
-      e.preventDefault();
-      if (isAnimating.current) return;
-      
-      const direction = e.deltaY > 0 ? 1 : -1;
-      const nextIndex = activeSlideRef.current + direction;
-      scrollToSlide(nextIndex);
-    };
-
     const handleKeyDown = (e) => {
-      if (isAnimating.current) return;
       let nextIndex = activeSlideRef.current;
 
       if (e.key === 'ArrowDown' || e.key === 'PageDown') {
@@ -225,76 +215,53 @@ function App() {
       }
     };
 
-    let touchStartY = 0;
-    const handleTouchStart = (e) => {
-      touchStartY = e.touches[0].clientY;
-    };
-
-    const handleTouchEnd = (e) => {
-      if (isAnimating.current) return;
-      const touchEndY = e.changedTouches[0].clientY;
-      const diffY = touchStartY - touchEndY;
-
-      if (Math.abs(diffY) > 50) {
-        const direction = diffY > 0 ? 1 : -1;
-        const nextIndex = activeSlideRef.current + direction;
-        scrollToSlide(nextIndex);
-      }
-    };
-
-    container.addEventListener('wheel', handleWheel, { passive: false });
     window.addEventListener('keydown', handleKeyDown);
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchend', handleTouchEnd, { passive: true });
-
-    return () => {
-      container.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('keydown', handleKeyDown);
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchend', handleTouchEnd);
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [windowHeight, projects.length]);
 
-  // Custom scroll event syncing
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (programmaticTimeoutRef.current) {
+        clearTimeout(programmaticTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Scroll event handler for syncing active slide index natively
   const handleScroll = () => {
     if (containerRef.current) {
-      setScrollTop(containerRef.current.scrollTop);
+      const scrollY = containerRef.current.scrollTop;
+      setScrollTop(scrollY);
+      
+      if (isProgrammaticScroll.current) return;
+      const index = Math.round(scrollY / windowHeight);
+      if (index >= 0 && index < projects.length && index !== activeSlideRef.current) {
+        setActiveSlide(index);
+      }
     }
   };
 
   const scrollToSlide = (index) => {
-    if (index < 0 || index >= projects.length || isAnimating.current) return;
+    if (index < 0 || index >= projects.length) return;
     
-    // Immediately set active slide state to trigger smooth text/laurels entry animations during scroll
+    isProgrammaticScroll.current = true;
     setActiveSlide(index);
+    setScrollTop(index * windowHeight);
     
-    const targetY = index * windowHeight;
-    const startY = containerRef.current ? containerRef.current.scrollTop : 0;
-    const difference = targetY - startY;
-    let startTime = null;
-    
-    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-    const duration = 1000; // 1 second majestic glide
-    
-    const step = (timestamp) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      if (containerRef.current) {
-        containerRef.current.scrollTop = startY + difference * easeOutCubic(progress);
-        setScrollTop(containerRef.current.scrollTop);
-      }
-      if (progress < 1) {
-        requestAnimationFrame(step);
-      } else {
-        setActiveSlide(index);
-        setTimeout(() => {
-          isAnimating.current = false;
-        }, 80);
-      }
-    };
-    
-    isAnimating.current = true;
-    requestAnimationFrame(step);
+    if (containerRef.current) {
+      containerRef.current.scrollTo({
+        top: index * windowHeight,
+        behavior: 'smooth'
+      });
+    }
+
+    if (programmaticTimeoutRef.current) {
+      clearTimeout(programmaticTimeoutRef.current);
+    }
+    programmaticTimeoutRef.current = setTimeout(() => {
+      isProgrammaticScroll.current = false;
+    }, 800);
   };
 
   const handleIndicatorClick = (index) => {
@@ -404,6 +371,10 @@ function App() {
       >
         {projects.map((project, index) => {
           const isActive = index === activeSlide;
+          // Calculate dynamic vertical parallax offset relative to scroll position
+          const offset = scrollTop - index * windowHeight;
+          const yParallax = offset * -0.15; // Move opposite to scroll for 3D depth
+
           return (
             <section 
               key={project.id} 
@@ -416,7 +387,7 @@ function App() {
                   className="slide-bg"
                   style={{
                     backgroundImage: `url(${imageMap[project.imageKey]})`,
-                    transform: `translate(${isActive ? mouseParallax.x * -15 : 0}px, ${isActive ? mouseParallax.y * -15 : 0}px) scale(1.05)`
+                    transform: `translate(${isActive ? mouseParallax.x * -15 : 0}px, ${(isActive ? mouseParallax.y * -15 : 0) + yParallax}px) scale(1.15)`
                   }}
                 />
               </div>
