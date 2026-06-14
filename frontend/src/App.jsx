@@ -236,9 +236,9 @@ function App() {
     const scrollY = containerRef.current.scrollTop;
     const setHeight = projects.length * windowHeight;
     
-    // Check if we have scrolled out of the middle copy (second copy) boundaries
-    if (scrollY < setHeight) {
-      // Crossed the top boundary of middle copy -> jump forward by one set
+    // Check if we are near the absolute top or bottom boundaries of the 3-set loop
+    if (scrollY < 0.5 * windowHeight) {
+      // Near top of the first set -> jump forward by one set
       const newScrollY = scrollY + setHeight;
       isProgrammaticScroll.current = true;
       containerRef.current.scrollTop = newScrollY;
@@ -252,8 +252,8 @@ function App() {
       setTimeout(() => {
         isProgrammaticScroll.current = false;
       }, 50);
-    } else if (scrollY >= 2 * setHeight) {
-      // Crossed the bottom boundary of middle copy -> jump backward by one set
+    } else if (scrollY > (projects.length * 3 - 1.5) * windowHeight) {
+      // Near bottom of the third set -> jump backward by one set
       const newScrollY = scrollY - setHeight;
       isProgrammaticScroll.current = true;
       containerRef.current.scrollTop = newScrollY;
@@ -268,7 +268,7 @@ function App() {
         isProgrammaticScroll.current = false;
       }, 50);
     } else {
-      // Normal scroll within middle copy
+      // Normal scroll within middle area
       setScrollTop(scrollY);
       
       if (isProgrammaticScroll.current) return;
@@ -413,7 +413,9 @@ function App() {
           const isActive = originalIndex === activeSlide;
           // Calculate dynamic vertical parallax offset relative to scroll position
           const offset = scrollTop - index * windowHeight;
-          const yParallax = offset * -0.15; // Move opposite to scroll for 3D depth
+          // Since .slide-bg is now position: absolute, translating it by 'offset' keeps it static relative to the viewport.
+          // By translating by 'offset * 0.85', we keep it mostly static but allow a subtle 15% parallax shift!
+          const yTranslation = offset * 0.85;
 
           return (
             <section 
@@ -427,7 +429,7 @@ function App() {
                   className="slide-bg"
                   style={{
                     backgroundImage: `url(${imageMap[project.imageKey]})`,
-                    transform: `translate(${isActive ? mouseParallax.x * -15 : 0}px, ${(isActive ? mouseParallax.y * -15 : 0) + yParallax}px) scale(1.15)`
+                    transform: `translate(${isActive ? mouseParallax.x * -15 : 0}px, ${(isActive ? mouseParallax.y * -15 : 0) + yTranslation}px) scale(1.25)`
                   }}
                 />
               </div>
