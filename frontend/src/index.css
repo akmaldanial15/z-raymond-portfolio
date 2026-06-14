@@ -142,7 +142,6 @@ header {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
   will-change: transform;
   transform: translate(
     calc(var(--is-active, 0) * var(--mouse-x, 0px)),
