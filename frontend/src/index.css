@@ -49,6 +49,7 @@ html, body {
   width: 100%;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none;  /* IE and Edge */
+  --parallax-factor: 0.85;
 }
 
 .scroll-container::-webkit-scrollbar {
@@ -884,5 +885,50 @@ header {
   }
   html, body {
     cursor: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .scroll-container {
+    --parallax-factor: 0.35; /* smaller factor since image container height is 55vh */
+  }
+
+  .slide-bg-container {
+    height: 55vh;
+  }
+
+  .slide-overlay {
+    height: 55vh;
+    background: radial-gradient(circle at center, rgba(6, 6, 7, 0) 0%, rgba(6, 6, 7, 0.5) 85%, rgba(6, 6, 7, 0.9) 100%),
+                linear-gradient(to top, rgba(11, 11, 12, 1) 0%, rgba(11, 11, 12, 0.4) 30%, transparent 100%);
+  }
+
+  .slide-content {
+    grid-template-rows: 55vh 1fr;
+    padding: 5.5rem 1rem 1.5rem;
+  }
+
+  .main-details {
+    padding-bottom: 1.5rem;
+  }
+
+  .film-title {
+    font-size: clamp(1.3rem, 7vw, 1.8rem);
+    margin-bottom: 0.3rem;
+  }
+
+  .tagline {
+    font-size: 0.55rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .film-credits {
+    font-size: 0.5rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .explore-btn {
+    padding: 0.5rem 1.2rem;
+    font-size: 0.55rem;
   }
 }
